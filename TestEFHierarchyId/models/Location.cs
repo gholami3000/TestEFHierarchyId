@@ -12,5 +12,6 @@ namespace TestEFHierarchyId.models
         public int? ParentId { get; set; }
         public string? Title { get; set; }
         public HierarchyId? HierarchyId { get; set; }
+        public virtual Location Parent { get; set; }
     }
 }

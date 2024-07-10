@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TestEFHierarchyId.models;
+using TestEFHierarchyId.TreeFunctions;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -12,9 +13,11 @@ namespace TestEFHierarchyId.Controllers
     public class LocationController : ControllerBase
     {
         private readonly HierarchyDbContext _context;
+        public static List<Location> StaticLocationList { get; set; }
         public LocationController(HierarchyDbContext context)
         {
             _context = context;
+            StaticLocationList = new List<Location>();
         }
         // GET: api/<LocationController>
         [HttpGet]
@@ -36,7 +39,7 @@ namespace TestEFHierarchyId.Controllers
             .Where(x => x.HierarchyId.IsDescendantOf(item.HierarchyId))
             .ToListAsync();
 
-  
+
 
             return list;
         }
@@ -68,21 +71,61 @@ namespace TestEFHierarchyId.Controllers
             //    HierarchyId = HierarchyId.Parse("/2/")
             //});
 
-            _context.Locations.Add(new Location
-            {
-                Id = 4,
-                ParentId =3,
-                Title = "zamzam1",
-                HierarchyId = HierarchyId.Parse("/2/1/")
-            });
+            //_context.Locations.Add(new Location
+            //{
+            //    Id = 4,
+            //    ParentId =3,
+            //    Title = "zamzam1",
+            //    HierarchyId = HierarchyId.Parse("/2/1/")
+            //});
 
             _context.SaveChanges();
         }
 
         // PUT api/<LocationController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public async Task Put(int id, [FromBody] string value)
         {
+            var locationList = await GetLocations();
+            StaticLocationList.AddRange(locationList);
+
+            var root = locationList.ToList().GenerateTree(c => c.Id, c => c.ParentId);
+            Test(root);
+        }
+
+        static void Test(IEnumerable<TreeItem<Location>> categories, int deep = 0)
+        {
+            var indexItemInDeep = 1;
+            foreach (var c in categories)
+            {
+                  //Console.WriteLine(new String('\t', deep) + c.Item.Title+c.Item.HierarchyId+ " level:" + deep + " indexItemInDeep:" + indexItemInDeep);
+
+                var itemStatic = StaticLocationList.FirstOrDefault(x => x.Id == c.Item.Id);
+                if (itemStatic?.ParentId != null)
+                {
+                    var itemStaticParent = StaticLocationList.FirstOrDefault(x => x.Id == itemStatic.ParentId);
+                    var key = GenerateHirarchyId(itemStaticParent.HierarchyId.ToString(), indexItemInDeep.ToString());
+                    itemStatic.HierarchyId = HierarchyId.Parse(key);
+                    Console.WriteLine(itemStatic.Title+"=>"+ itemStatic.HierarchyId.ToString());
+                }
+              
+                indexItemInDeep++;
+                Test(c.Children, deep + 1);
+            }
+        }
+
+        public static string GenerateHirarchyId(string parant,string indexLevel)
+        {
+            if (parant=="/")
+            {
+                var q = parant + indexLevel + "/";
+                return  q;
+            }
+            else
+            {
+                var q = parant + indexLevel+ "/";
+                return q;
+            }
         }
 
         // DELETE api/<LocationController>/5
@@ -90,5 +133,12 @@ namespace TestEFHierarchyId.Controllers
         public void Delete(int id)
         {
         }
+
+        async Task<List<Location>> GetLocations()
+        {
+            var list = await _context.Locations.Include(x => x.Parent).AsNoTracking().ToListAsync();
+            return list;
+        }
+
     }
 }
