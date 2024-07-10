@@ -31,15 +31,15 @@ namespace TestEFHierarchyId.Controllers
         public async Task<List<Location>> Get(int id)
         {
             var item = await _context.Locations.FindAsync(3);
+           // var item = await _context.Locations.FindAsync(2);
             var list = await _context.Locations
                 .Where(x => x.HierarchyId.GetAncestor(1) == item.HierarchyId)
                 .ToListAsync();
 
             var list2 = await _context.Locations
             .Where(x => x.HierarchyId.IsDescendantOf(item.HierarchyId))
+            .Where(x=>x.Id!=3)
             .ToListAsync();
-
-
 
             return list;
         }
@@ -91,6 +91,17 @@ namespace TestEFHierarchyId.Controllers
 
             var root = locationList.ToList().GenerateTree(c => c.Id, c => c.ParentId);
             Test(root);
+
+            foreach (var item in StaticLocationList) {
+               var location =await _context.Locations.FirstOrDefaultAsync(x => x.Id == item.Id);
+                if (location !=null)
+                {
+                    location.HierarchyId = item.HierarchyId;
+                    await _context.SaveChangesAsync();
+                }
+              
+            }
+
         }
 
         static void Test(IEnumerable<TreeItem<Location>> categories, int deep = 0)
