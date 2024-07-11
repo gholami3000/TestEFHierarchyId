@@ -9,6 +9,7 @@ namespace TestEFHierarchyId.models
 
         }
         public virtual DbSet<Location> Locations { get; set; }
+        public virtual DbSet<Storage> Storages { get; set; }
 
     }
 }

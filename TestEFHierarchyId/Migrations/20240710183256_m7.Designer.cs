@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.SqlServer.Types;
 using TestEFHierarchyId.models;
@@ -12,9 +13,11 @@ using TestEFHierarchyId.models;
 namespace TestEFHierarchyId.Migrations
 {
     [DbContext(typeof(HierarchyDbContext))]
-    partial class HierarchyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240710183256_m7")]
+    partial class m7
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,12 +37,17 @@ namespace TestEFHierarchyId.Migrations
                     b.Property<int?>("ParentId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("StorageId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ParentId");
+
+                    b.HasIndex("StorageId");
 
                     b.ToTable("Locations");
                 });
@@ -60,8 +68,6 @@ namespace TestEFHierarchyId.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LocationId");
-
                     b.ToTable("Storages");
                 });
 
@@ -71,16 +77,16 @@ namespace TestEFHierarchyId.Migrations
                         .WithMany()
                         .HasForeignKey("ParentId");
 
+                    b.HasOne("TestEFHierarchyId.models.Storage", null)
+                        .WithMany("Locations")
+                        .HasForeignKey("StorageId");
+
                     b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("TestEFHierarchyId.models.Storage", b =>
                 {
-                    b.HasOne("TestEFHierarchyId.models.Location", "Location")
-                        .WithMany()
-                        .HasForeignKey("LocationId");
-
-                    b.Navigation("Location");
+                    b.Navigation("Locations");
                 });
 #pragma warning restore 612, 618
         }

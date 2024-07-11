@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.SqlServer.Types;
 using TestEFHierarchyId.models;
@@ -12,9 +13,11 @@ using TestEFHierarchyId.models;
 namespace TestEFHierarchyId.Migrations
 {
     [DbContext(typeof(HierarchyDbContext))]
-    partial class HierarchyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240710184338_m8")]
+    partial class m8
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

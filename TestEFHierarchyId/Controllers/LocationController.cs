@@ -23,6 +23,22 @@ namespace TestEFHierarchyId.Controllers
         [HttpGet]
         public IEnumerable<string> Get()
         {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            // the code that you want to measure comes here
+          
+            var list3 =  _context.Storages.Include(x => x.Location).Select(x => new
+            {
+                StorageName = x.StorageName,
+                HierarchyId = x.Location.HierarchyId,
+                //Ancestors = _context.Locations.Where(c=>c.HierarchyId.GetAncestor(1)==x.Location.HierarchyId).AsEnumerable()
+                Ancestors=_context.Locations.Where(ancestor => _context.Locations
+                .SingleOrDefault(descendent => descendent.Id == x.LocationId && ancestor.Id != descendent.Id)
+                .HierarchyId.IsDescendantOf(ancestor.HierarchyId)).AsEnumerable()
+        .OrderByDescending(ancestor => ancestor.HierarchyId.GetLevel()).ToList()
+            }).ToList();
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            Console.WriteLine(elapsedMs.ToString());
             return new string[] { "value1", "value2" };
         }
 
@@ -30,16 +46,40 @@ namespace TestEFHierarchyId.Controllers
         [HttpGet("{id}")]
         public async Task<List<Location>> Get(int id)
         {
-            var item = await _context.Locations.FindAsync(3);
-           // var item = await _context.Locations.FindAsync(2);
+            //var item = await _context.Locations.FindAsync(3);
+            var item = await _context.Locations.FindAsync(6);
             var list = await _context.Locations
                 .Where(x => x.HierarchyId.GetAncestor(1) == item.HierarchyId)
                 .ToListAsync();
 
             var list2 = await _context.Locations
             .Where(x => x.HierarchyId.IsDescendantOf(item.HierarchyId))
-            .Where(x=>x.Id!=3)
+            //.Where(x=>x.Id!=3)
             .ToListAsync();
+
+            var list3 = await _context.Storages.Include(x=>x.Location).Select(x => new
+            {
+                StorageName = x.StorageName,
+                HierarchyId= x.Location.HierarchyId,
+                //Ancestors = _context.Locations.Where(c=>c.HierarchyId.GetAncestor(1)==x.Location.HierarchyId).AsEnumerable()
+            }).ToListAsync();
+
+           // Get all ancestors of an entity
+         var FindAllAncestors = _context.Locations.Where(ancestor => _context.Locations
+                .SingleOrDefault(descendent => descendent.Title == "modul1"  && ancestor.Id != descendent.Id)
+                .HierarchyId.IsDescendantOf(ancestor.HierarchyId))
+        .OrderByDescending(ancestor => ancestor.HierarchyId.GetLevel());
+
+            //Get all descendants of an entity
+            var FindAllDescendents = _context.Locations.Where(
+            descendent => descendent.HierarchyId.IsDescendantOf(
+                _context.Locations
+                    .Single(
+                        ancestor =>
+                            ancestor.Title == "ahya"
+                            && descendent.Id != ancestor.Id)
+                    .HierarchyId))
+        .OrderBy(descendent => descendent.HierarchyId.GetLevel());
 
             return list;
         }
