@@ -25,22 +25,73 @@ namespace TestEFHierarchyId.Controllers
         {
             var watch = System.Diagnostics.Stopwatch.StartNew();
             // the code that you want to measure comes here
-          
-            var list3 =  _context.Storages.Include(x => x.Location).Select(x => new
+
+            var list3 = _context.Storages.Include(x => x.Location).Select(x => new
             {
                 StorageName = x.StorageName,
                 HierarchyId = x.Location.HierarchyId,
                 //Ancestors = _context.Locations.Where(c=>c.HierarchyId.GetAncestor(1)==x.Location.HierarchyId).AsEnumerable()
-                Ancestors=_context.Locations.Where(ancestor => _context.Locations
+                Ancestors = _context.Locations.Where(ancestor => _context.Locations
                 .SingleOrDefault(descendent => descendent.Id == x.LocationId && ancestor.Id != descendent.Id)
-                .HierarchyId.IsDescendantOf(ancestor.HierarchyId)).AsEnumerable()
-        .OrderByDescending(ancestor => ancestor.HierarchyId.GetLevel()).ToList()
+                .HierarchyId.IsDescendantOf(ancestor.HierarchyId))
+                            .OrderByDescending(ancestor => ancestor.HierarchyId.GetLevel()).ToList()
             }).ToList();
+
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
             Console.WriteLine(elapsedMs.ToString());
             return new string[] { "value1", "value2" };
         }
+
+
+        [HttpGet("Test1")]
+        public IActionResult Test1()
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            // the code that you want to measure comes here
+
+            var list3 = _context.Storages.Include(x => x.Location).AsNoTracking().Select(x => new
+            {
+                StorageName = x.StorageName,
+                HierarchyId = x.Location.HierarchyId,
+                //Ancestors = _context.Locations.Where(c=>c.HierarchyId.GetAncestor(1)==x.Location.HierarchyId).AsEnumerable()
+                Ancestors = _context.Locations.Where(ancestor => _context.Locations
+                .SingleOrDefault(descendent => descendent.Id == x.LocationId && ancestor.Id != descendent.Id)
+                .HierarchyId.IsDescendantOf(ancestor.HierarchyId))
+                            .OrderByDescending(ancestor => ancestor.HierarchyId.GetLevel()).ToList()
+            }).ToList();
+
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            Console.WriteLine("get all storage in:"+elapsedMs.ToString());
+            return Ok(list3.Take(20));
+           // return new string[] { "value1", "value2" };
+        }
+
+
+        [HttpPost("InsertStorage1000")]
+        public IActionResult InsertStorage1000()
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            // the code that you want to measure comes here
+
+            for (int i = 0; i < 1000; i++)
+            {
+                _context.Storages.Add(new Storage
+                {
+                   LocationId=4,
+                   StorageName=$"StorageZamzam1{i.ToString()}"
+                });
+            }
+            _context.SaveChanges();
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            Console.WriteLine("SaveChanges:"+elapsedMs.ToString());
+            return Ok();
+            // return new string[] { "value1", "value2" };
+        }
+
+
 
         // GET api/<LocationController>/5
         [HttpGet("{id}")]
@@ -57,18 +108,18 @@ namespace TestEFHierarchyId.Controllers
             //.Where(x=>x.Id!=3)
             .ToListAsync();
 
-            var list3 = await _context.Storages.Include(x=>x.Location).Select(x => new
+            var list3 = await _context.Storages.Include(x => x.Location).Select(x => new
             {
                 StorageName = x.StorageName,
-                HierarchyId= x.Location.HierarchyId,
+                HierarchyId = x.Location.HierarchyId,
                 //Ancestors = _context.Locations.Where(c=>c.HierarchyId.GetAncestor(1)==x.Location.HierarchyId).AsEnumerable()
             }).ToListAsync();
 
-           // Get all ancestors of an entity
-         var FindAllAncestors = _context.Locations.Where(ancestor => _context.Locations
-                .SingleOrDefault(descendent => descendent.Title == "modul1"  && ancestor.Id != descendent.Id)
-                .HierarchyId.IsDescendantOf(ancestor.HierarchyId))
-        .OrderByDescending(ancestor => ancestor.HierarchyId.GetLevel());
+            // Get all ancestors of an entity
+            var FindAllAncestors = _context.Locations.Where(ancestor => _context.Locations
+                   .SingleOrDefault(descendent => descendent.Title == "modul1" && ancestor.Id != descendent.Id)
+                   .HierarchyId.IsDescendantOf(ancestor.HierarchyId))
+           .OrderByDescending(ancestor => ancestor.HierarchyId.GetLevel());
 
             //Get all descendants of an entity
             var FindAllDescendents = _context.Locations.Where(
@@ -132,14 +183,15 @@ namespace TestEFHierarchyId.Controllers
             var root = locationList.ToList().GenerateTree(c => c.Id, c => c.ParentId);
             Test(root);
 
-            foreach (var item in StaticLocationList) {
-               var location =await _context.Locations.FirstOrDefaultAsync(x => x.Id == item.Id);
-                if (location !=null)
+            foreach (var item in StaticLocationList)
+            {
+                var location = await _context.Locations.FirstOrDefaultAsync(x => x.Id == item.Id);
+                if (location != null)
                 {
                     location.HierarchyId = item.HierarchyId;
                     await _context.SaveChangesAsync();
                 }
-              
+
             }
 
         }
@@ -149,7 +201,7 @@ namespace TestEFHierarchyId.Controllers
             var indexItemInDeep = 1;
             foreach (var c in categories)
             {
-                  //Console.WriteLine(new String('\t', deep) + c.Item.Title+c.Item.HierarchyId+ " level:" + deep + " indexItemInDeep:" + indexItemInDeep);
+                //Console.WriteLine(new String('\t', deep) + c.Item.Title+c.Item.HierarchyId+ " level:" + deep + " indexItemInDeep:" + indexItemInDeep);
 
                 var itemStatic = StaticLocationList.FirstOrDefault(x => x.Id == c.Item.Id);
                 if (itemStatic?.ParentId != null)
@@ -157,24 +209,24 @@ namespace TestEFHierarchyId.Controllers
                     var itemStaticParent = StaticLocationList.FirstOrDefault(x => x.Id == itemStatic.ParentId);
                     var key = GenerateHirarchyId(itemStaticParent.HierarchyId.ToString(), indexItemInDeep.ToString());
                     itemStatic.HierarchyId = HierarchyId.Parse(key);
-                    Console.WriteLine(itemStatic.Title+"=>"+ itemStatic.HierarchyId.ToString());
+                    Console.WriteLine(itemStatic.Title + "=>" + itemStatic.HierarchyId.ToString());
                 }
-              
+
                 indexItemInDeep++;
                 Test(c.Children, deep + 1);
             }
         }
 
-        public static string GenerateHirarchyId(string parant,string indexLevel)
+        public static string GenerateHirarchyId(string parant, string indexLevel)
         {
-            if (parant=="/")
+            if (parant == "/")
             {
                 var q = parant + indexLevel + "/";
-                return  q;
+                return q;
             }
             else
             {
-                var q = parant + indexLevel+ "/";
+                var q = parant + indexLevel + "/";
                 return q;
             }
         }
