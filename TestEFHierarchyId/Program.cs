@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TestEFHierarchyId.models;
+using TestEFHierarchyId.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var configurations = builder.Services.BuildServiceProvider().GetRequiredService<IConfiguration>();
@@ -10,7 +11,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddScoped<HierarchyService>();
 
 
 //builder.Services.AddDbContext<HierarchyDbContext>(opt =>

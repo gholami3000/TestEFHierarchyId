@@ -68,8 +68,6 @@ namespace TestEFHierarchyId.Controllers
             // return new string[] { "value1", "value2" };
         }
 
-
-
         [HttpGet("Test2")]
         public async Task<IActionResult> Test2()
         {
