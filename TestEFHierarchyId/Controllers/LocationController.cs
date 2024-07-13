@@ -63,9 +63,97 @@ namespace TestEFHierarchyId.Controllers
 
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
-            Console.WriteLine("get all storage in:"+elapsedMs.ToString());
+            Console.WriteLine("get all storage in:" + elapsedMs.ToString());
             return Ok(list3.Take(20));
-           // return new string[] { "value1", "value2" };
+            // return new string[] { "value1", "value2" };
+        }
+
+
+
+        [HttpGet("Test2")]
+        public async Task<IActionResult> Test2()
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            // the code that you want to measure comes here
+
+            var ancestors = await _context.Locations.Include(x => x.Parent)
+                        .Where(x => x.Id == 7).ToListAsync();
+
+            var ancestors2 = await _context.Locations
+              .FromSqlRaw(@"
+        WITH RECUR AS
+        (
+            SELECT Id, Title, ParentId,HierarchyId
+            FROM Locations
+            WHERE Id = {0}
+            UNION ALL
+            SELECT e.Id, e.Title, e.ParentId,e.HierarchyId
+            FROM Locations e
+            INNER JOIN RECUR r ON e.Id = r.ParentId
+        )
+        SELECT Id, Title,HierarchyId,ParentId
+        FROM RECUR", 7)
+    .ToListAsync();
+
+            foreach (var ancestor in ancestors2)
+            {
+                Console.WriteLine($"Ancestor: {ancestor.Title}");
+            }
+
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            Console.WriteLine("get all storage in:" + elapsedMs.ToString());
+            return Ok(ancestors);
+            // return new string[] { "value1", "value2" };
+        }
+
+        [HttpGet("Test3")]
+        public async Task<IActionResult> Test3()
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            // the code that you want to measure comes here
+
+            var query = await _context.Storages
+                        .Include(x => x.Location)
+                        .ThenInclude(x => x.Parent)
+                        .ThenInclude(x => x.Parent)
+                        .ThenInclude(x => x.Parent)
+                        .AsNoTracking().ToListAsync();
+
+            //query.Select(x => new
+            //{
+            //    StorageName = x.StorageName,
+            //    //Ancestors = 
+            //}).ToList();
+
+            var result = new List<object>();
+            foreach (var item in query)
+            {
+               var s=  TestInclude(item.Location, new List<string>());
+                result.Add(new
+                {
+                    StorageName = item.StorageName,
+                    Ancestors = string.Join("/", s)
+                });
+              //  Console.WriteLine("//////////////////////////");
+            }
+           // TestInclude(item.Location);
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            Console.WriteLine("get all storage in:" + elapsedMs.ToString()+"ms");
+            return Ok(result.Take(5));
+            // return new string[] { "value1", "value2" };
+        }
+
+        static List<string> TestInclude(Location item, List<string> list)
+        {
+            if (item != null)
+            {
+               // Console.WriteLine(item.Title);
+                list.Add(item.Title);
+                TestInclude(item.Parent,list);
+            }
+            return list;
         }
 
 
@@ -79,18 +167,17 @@ namespace TestEFHierarchyId.Controllers
             {
                 _context.Storages.Add(new Storage
                 {
-                   LocationId=4,
-                   StorageName=$"StorageZamzam1{i.ToString()}"
+                    LocationId = 4,
+                    StorageName = $"StorageZamzam1{i.ToString()}"
                 });
             }
             _context.SaveChanges();
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
-            Console.WriteLine("SaveChanges:"+elapsedMs.ToString());
+            Console.WriteLine("SaveChanges:" + elapsedMs.ToString());
             return Ok();
             // return new string[] { "value1", "value2" };
         }
-
 
 
         // GET api/<LocationController>/5

@@ -15,7 +15,10 @@ namespace TestEFHierarchyId.models
         public int Id { get; set; }
         public int? ParentId { get; set; }
         public string? Title { get; set; }
+        public string? TagName { get; set; }
         public HierarchyId? HierarchyId { get; set; }
-        public virtual Location Parent { get; set; }
+        public  Location Parent { get; set; }
+        //public List<Location>? Subordinates { get; set; } // Navigation property for Subordinates
+
     }
 }
