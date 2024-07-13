@@ -60,8 +60,10 @@ namespace TestEFHierarchyId.Services
         /// </summary>
         /// <param name="parentId"></param>
         /// <returns></returns>
-        public async Task<List<Location>> GetAllAncestors(int parentId)
+        public async Task<List<dynamic>> GetAllAncestors(int parentId)
         {
+            var result = new List<dynamic>();
+
             var allAncestors = await _context.Locations.Where(ancestor => _context.Locations
                    .Single(descendent =>
                                         descendent.ParentId == parentId
@@ -69,7 +71,15 @@ namespace TestEFHierarchyId.Services
                    .HierarchyId.IsDescendantOf(ancestor.HierarchyId))
            .OrderByDescending(ancestor => ancestor.HierarchyId.GetLevel()).ToListAsync();
 
-            return allAncestors;
+            foreach (var item in allAncestors)
+            {
+                result.Add(new
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                });
+            }
+            return result;
         }
 
         /// <summary>
@@ -77,8 +87,9 @@ namespace TestEFHierarchyId.Services
         /// </summary>
         /// <param name="parentId"></param>
         /// <returns></returns>
-        public async Task<List<Location>> GetAllDescendant(int parentId)
+        public async Task<List<dynamic>> GetAllDescendant(int parentId)
         {
+            var result=new List<dynamic>();
             var allDescendents = await _context.Locations.Where(
             descendent => descendent.HierarchyId.IsDescendantOf(
                 _context.Locations
@@ -89,8 +100,14 @@ namespace TestEFHierarchyId.Services
                     .HierarchyId))
         .OrderBy(descendent => descendent.HierarchyId.GetLevel()).ToListAsync();
 
-            return allDescendents;
+            foreach (var item in allDescendents)
+            {
+                result.Add(new{
+                    Id=item.Id,
+                    Title=item.Title,
+                });
+            }
+            return result;
         }
-
     }
 }
